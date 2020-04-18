@@ -1,0 +1,180 @@
+---
+title: "Week 4 Assignment (Real Options)"
+author: "Group 2"
+subtitle: Energy Analytics
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+## Solutions
+
+### Question A:
+
+The project has two options and 2 stages for each option.
+
+The first stage is the same for each option (until the 5th year). Then the second stage is different for each option, since in option 2 we build additional wells and infrastacture.
+
+We start by calculating the NPV for the first stage as follows:
+
+```{r}
+r <- 0.04
+prod_cost <- 2.7*10^6*100
+oper_cost <- 0.55*10^6*100
+year1_coal <- 17.2*10^6
+year2_coal <- 18.9*10^6
+year3_coal <- 18.5*10^6
+year4_coal <- 15.8*10^6
+year5_coal <- 13.5*10^6
+coal_price_1 <- 10
+profit_stage_1 <- -prod_cost+(year1_coal*coal_price_1-oper_cost)/(1+r)
++(year2_coal*coal_price_1-oper_cost)/((1+r)^2)+
+  (year3_coal*coal_price_1-oper_cost)/((1+r)^3)+
+  (year4_coal*coal_price_1-oper_cost)/((1+r)^4)+
+  (year5_coal*coal_price_1-oper_cost)/((1+r)^5)    
+```
+
+The sencond stage is different for the two options that we have.
+
+For both options, the price for a cubic meter of coal from year 6 and after will be a normal distribution with mean 10 pennies and standard deviation 3 pence. For option a, everything else will be the same as now.
+
+For option a:
+
+```{r}
+year6_coal_a <- 10.9*10^6
+year7_coal_a <- 9.3*10^6
+year8_coal_a <- 7.6*10^6
+year9_coal_a <- 6.7*10^6
+year10_coal_a <- 5.8*10^6
+total_carbon_a2 <- year6_coal_a/((1+r)^6)+year7_coal_a/((1+r)^7)+year8_coal_a/((1+r)^8)+
+  year9_coal_a/((1+r)^9)+year10_coal_a/((1+r)^10)
+total_oper_a2 <- 0.55*(10^6)*100*(1/((1+r)^6)+1/((1+r)^7)+1/((1+r)^8)+1/((1+r)^9)+1/((1+r)^10))
+```
+
+For option b:
+
+```{r}
+year6_coal_b <- year6_coal_a+ 9.4*10^6
+year7_coal_b <- year7_coal_a+8.8*10^6
+year8_coal_b <- year8_coal_a+7.7*10^6
+year9_coal_b <- year9_coal_a+5.1*10^6
+year10_coal_b <- year10_coal_a+3.3*10^6
+const_cost_b <- 1.4*(10^6)
+total_carbon_b2 <- year6_coal_b/((1+r)^6)+year7_coal_b/((1+r)^7)+year8_coal_b/((1+r)^8)+
+  year9_coal_b/((1+r)^9)+year10_coal_b/((1+r)^10)
+total_oper_b2 <- const_cost_b+0.85*(10^6)*100*(1/((1+r)^6)+1/((1+r)^7)+1/((1+r)^8)+
+                                                 1/((1+r)^9)+1/((1+r)^10))
+```
+
+As a result, we have the following two profits:
+
+profit_a = profit_stage_1 + total_carbon_a2xcoal_price_1 - total_oper_a2 = 29860513*Z + 34510020
+
+profit_b = profit_stage_1 + total_carbon_b2xcoal_price_2 - total_oper_b2 = 55415615*Z - 76662184
+
+Therefore, the expected value of profit for the project is: 
+
+E[max(profit_a,profit_b)] = E[profit_b] + E[max(profit_a-profit_b,0)]
+
+E[profit_b] = total_carbon_b2 * E[coal_price_b2] + profit_stage_1 - total_oper_b2 =
+55415615 * E[coal_price_b2] - 76662184
+
+E[coal_price_b2] = 10 pennies.
+
+```{r}
+Eprofit_b <- profit_stage_1 + total_carbon_b2*10 - total_oper_b2
+```
+
+profit_a-profit_b = 111172204 - 25555102*Z = 25555102x(4.35-Z)
+
+E[max(profit_a-profit_b,0)] = 25555102*E[max(4.35-Z,0)] = 4.35-mean(Z)xpnorm(4.35,10,3) + 3^2dnorm(4.35,10,3)
+
+```{r}
+mean_price <- 10
+std_price <- 3 
+Ep_a_b <- (4.35-mean_price)*pnorm(4.35, mean = 10, sd = 3, lower.tail = TRUE)
++(std_price^2)*dnorm(4.35, mean = 10, sd = 3)
+Eprofit_max_a_b <- 25555102*Ep_a_b
+
+# note that the calculations are in pennies
+Etot_profit <- Eprofit_b + Eprofit_max_a_b
+
+Etot_profit_pounds <- Etot_profit/100
+print(Etot_profit_pounds)
+```
+
+### Question B:
+
+We believe that the question mainly asks us to compare the value of the current assumption that the prices after the 5th year follow a normal distribution with N(10,3) assuming that the price will stay certain at 10 pennies for all the 10 years.
+
+The profit for the case of uncertainty has been calculated from question A. 
+
+The profit with the price certain at 10 pennies per cubic meter of coal follows the same logic with question A, but we replace Z~ N(10,3) with 10 pennies.
+
+```{r}
+r <- 0.04
+prod_cost <- 2.7*10^6*100
+oper_cost <- 0.55*10^6*100
+year1_coal <- 17.2*10^6
+year2_coal <- 18.9*10^6
+year3_coal <- 18.5*10^6
+year4_coal <- 15.8*10^6
+year5_coal <- 13.5*10^6
+coal_price_1 <- 10
+profit_stage_1 <- -prod_cost+(year1_coal*coal_price_1-oper_cost)/(1+r)+
+  (year2_coal*coal_price_1-oper_cost)/((1+r)^2)+
+  (year3_coal*coal_price_1-oper_cost)/((1+r)^3)+
+  (year4_coal*coal_price_1-oper_cost)/((1+r)^4)+
+  (year5_coal*coal_price_1-oper_cost)/((1+r)^5)    
+```
+
+Stage 2 for option a with price = 10 pennies.
+
+```{r}
+year6_coal_a <- 10.9*10^6
+year7_coal_a <- 9.3*10^6
+year8_coal_a <- 7.6*10^6
+year9_coal_a <- 6.7*10^6
+year10_coal_a <- 5.8*10^6
+total_carbon_a2 <- year6_coal_a/((1+r)^6)+year7_coal_a/((1+r)^7)+year8_coal_a/((1+r)^8)+
+  year9_coal_a/((1+r)^9)+year10_coal_a/((1+r)^10)
+total_oper_a2 <- 0.55*(10^6)*100*(1/((1+r)^6)+1/((1+r)^7)+1/((1+r)^8)+1/((1+r)^9)+1/((1+r)^10))
+total_profit_a <- profit_stage_1+ total_carbon_a2*10-total_oper_a2
+```
+
+Stage 2 for option b with price = 10 pennies.
+
+```{r}
+year6_coal_b <- year6_coal_a+ 9.4*10^6
+year7_coal_b <- year7_coal_a+8.8*10^6
+year8_coal_b <- year8_coal_a+7.7*10^6
+year9_coal_b <- year9_coal_a+5.1*10^6
+year10_coal_b <- year10_coal_a+3.3*10^6
+const_cost_b <- 1.4*(10^6)
+total_carbon_b2 <- year6_coal_b/((1+r)^6)+year7_coal_b/((1+r)^7)+year8_coal_b/((1+r)^8)+
+  year9_coal_b/((1+r)^9)+year10_coal_b/((1+r)^10)
+total_oper_b2 <- const_cost_b+ 0.85*(10^6)*100*(1/((1+r)^6)+1/((1+r)^7)+1/((1+r)^8)+
+                                                  1/((1+r)^9)+1/((1+r)^10))
+total_profit_b <- profit_stage_1+ total_carbon_b2*10-total_oper_b2
+```
+
+We now print the total profits for both options:
+
+```{r}
+print(total_profit_a/100)
+print(total_profit_b/100)
+```
+
+The greater value between the two is 4774940 for option b, which will be the final value of the whole project with certainty.
+
+Consequently, the added value of being able to decide after the five years with the uncertainty is: 
+4,783,788 - 4,774,940 = \£8,848
+
+### Question C:
+
+A general rule that is followed to make a decision in the future where there are elements of uncertainty ultimately lives in an evaluation of risk. The above analysis was sensitive to the distribution chosen, and that both the NPV for option A and option B would be very different if we chose to use a different distribution, e.g. a uniform distribution, binomial, etc. If a uniform distribution was chosen, we would not have had a value for the standard deviation e.g. and thus we would not be factoring risk in as an element of the option.
+
+Moreover, if the mean and the standard deviation of the distribution are known to us, but not the distribution itself, we ultimately need to model some sort of probability distribution taking into account the mean and standard deviation of the distribution. We think ultimately the best way to do so would be to generate a monte carlo simulation using various different distributions e.g. normal, binomial, uniform as above and plot the runs of these simulations with the historical gas price data and see which one has the smallest loss function.
+
+Furthermore, given that we have historical data available for the gas prices, we could use time series forecast in order to make a prediction for the next 5 years where we would get a normal distribution with a mean and a standard deviation. Finally, we could also use either exponential smoothing or an Arima model, and by getting a score on the training data, we could decide which one to use.
